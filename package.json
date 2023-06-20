@@ -38,6 +38,9 @@
       "favoloso"
     ]
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "prettier": {
     "singleQuote": true,
     "trailingComma": "all"
