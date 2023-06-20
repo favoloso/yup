@@ -1,5 +1,5 @@
 {
-  "name": "yup",
+  "name": "@favoloso/yup",
   "version": "1.2.0",
   "description": "Dead simple Object schema validation",
   "main": "lib/index.js",
@@ -33,7 +33,10 @@
   "homepage": "https://github.com/jquense/yup",
   "release": {
     "conventionalCommits": true,
-    "publishDir": "lib"
+    "publishDir": "lib",
+    "allowBranch": [
+      "favoloso"
+    ]
   },
   "prettier": {
     "singleQuote": true,
