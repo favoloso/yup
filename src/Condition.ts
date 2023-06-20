@@ -1,6 +1,6 @@
 import isSchema from './util/isSchema';
 import Reference from './Reference';
-import type { ISchema } from './types';
+import type { Ancester, ISchema } from './types';
 
 export type ConditionBuilder<T extends ISchema<any, any>> = (
   values: any[],
@@ -18,6 +18,7 @@ export type ResolveOptions<TContext = any> = {
   value?: any;
   parent?: any;
   context?: TContext;
+  from?: Ancester<TContext>[];
 };
 
 class Condition<TIn extends ISchema<any, any> = ISchema<any, any>> {
