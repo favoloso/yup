@@ -13,7 +13,7 @@ import TupleSchema, { create as tupleCreate } from './tuple';
 import { create as refCreate } from './Reference';
 import { create as lazyCreate } from './Lazy';
 import ValidationError from './ValidationError';
-import reach, { getIn } from './util/reach';
+import reach, { getIn, reachAndResolve } from './util/reach';
 import isSchema from './util/isSchema';
 import printValue from './util/printValue';
 import setLocale, { LocaleObject } from './setLocale';
@@ -99,6 +99,7 @@ export {
   lazyCreate as lazy,
   tupleCreate as tuple,
   reach,
+  reachAndResolve,
   getIn,
   isSchema,
   printValue,
