@@ -1,3 +1,15 @@
+# [1.3.0](https://github.com/jquense/yup/compare/v1.2.0...v1.3.0) (2023-06-21)
+
+
+### Features
+
+* add options.from to ResolveOptions ([a10a116](https://github.com/jquense/yup/commit/a10a1167f5dc15a16740821ef825bacd3c062ea3))
+* Allow schema metadata to be strongly typed ([#2021](https://github.com/jquense/yup/issues/2021)) ([e593f8f](https://github.com/jquense/yup/commit/e593f8f72e7195cf0ac48fa8e1cd82d95c1e6bb5))
+
+
+
+
+
 # [1.2.0](https://github.com/jquense/yup/compare/v1.1.1...v1.2.0) (2023-05-25)
 
 
