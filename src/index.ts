@@ -12,6 +12,7 @@ import ArraySchema, { create as arrayCreate } from './array';
 import TupleSchema, { create as tupleCreate } from './tuple';
 import { create as refCreate } from './Reference';
 import { create as lazyCreate } from './Lazy';
+import Lazy from './Lazy';
 import ValidationError from './ValidationError';
 import reach, { getIn, reachAndResolve } from './util/reach';
 import isSchema from './util/isSchema';
@@ -84,6 +85,7 @@ export type {
   LocaleObject,
   ValidateOptions,
   DefaultThunk,
+  Lazy,
 };
 
 export {
