@@ -85,7 +85,6 @@ export type {
   LocaleObject,
   ValidateOptions,
   DefaultThunk,
-  Lazy,
 };
 
 export {
@@ -108,6 +107,7 @@ export {
   setLocale,
   defaultLocale,
   ValidationError,
+  Lazy,
 };
 
 export {
