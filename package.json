@@ -1,6 +1,6 @@
 {
   "name": "@favoloso/yup",
-  "version": "1.4.0-fv.1",
+  "version": "1.4.0-fv.2",
   "description": "Dead simple Object schema validation",
   "main": "lib/index.js",
   "module": "lib/index.esm.js",
