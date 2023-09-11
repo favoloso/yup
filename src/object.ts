@@ -166,13 +166,20 @@ export default class ObjectSchema<
     let props = ([] as string[]).concat(
       this._nodes,
       Object.keys(value).filter((v) => !this._nodes.includes(v)),
-    );    
+    );
+
+    // options.from = [{ schema: this, value: originalValue }, ...from];
+    if (options.from?.[0]?.schema !== this) {
+      options.from = [{ schema: this, value: value }, ...(options.from || [])];
+    }
 
     let intermediateValue: Record<string, unknown> = {}; // is filled during the transform below
-    let intermediateFrom = options.from ? [
-      {...options.from[0], value: intermediateValue },
-      ...options.from.slice(1)
-    ] : [];
+    let intermediateFrom = options.from
+      ? [
+          { ...options.from[0], value: intermediateValue },
+          ...options.from.slice(1),
+        ]
+      : [];
     let innerOptions: InternalOptions<TContext> = {
       ...options,
       parent: intermediateValue,
@@ -196,7 +203,7 @@ export default class ObjectSchema<
           value: inputValue,
           context: options.context,
           parent: intermediateValue,
-          from: innerOptions.from
+          from: innerOptions.from,
         });
 
         let fieldSpec = field instanceof Schema ? field.spec : undefined;
