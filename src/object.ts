@@ -168,16 +168,19 @@ export default class ObjectSchema<
       Object.keys(value).filter((v) => !this._nodes.includes(v)),
     );
 
-    // options.from = [{ schema: this, value: originalValue }, ...from];
-    if (options.from?.[0]?.schema !== this) {
-      options.from = [{ schema: this, value: value }, ...(options.from || [])];
+    // Fix missing `from` in nested schemas: in that case, the first `from` is
+    // the nested schema itself, and we need to add the parent schema to the
+    // `from` array.
+    let optionsFrom = options.from;
+    if (optionsFrom?.[0]?.schema !== this) {
+      optionsFrom = [{ schema: this, value: value }, ...(options.from || [])];
     }
 
     let intermediateValue: Record<string, unknown> = {}; // is filled during the transform below
-    let intermediateFrom = options.from
+    let intermediateFrom = optionsFrom
       ? [
-          { ...options.from[0], value: intermediateValue },
-          ...options.from.slice(1),
+          { ...optionsFrom[0], value: intermediateValue },
+          ...optionsFrom.slice(1),
         ]
       : [];
     let innerOptions: InternalOptions<TContext> = {
