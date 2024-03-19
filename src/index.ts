@@ -10,8 +10,9 @@ import DateSchema, { create as dateCreate } from './date';
 import ObjectSchema, { AnyObject, create as objectCreate } from './object';
 import ArraySchema, { create as arrayCreate } from './array';
 import TupleSchema, { create as tupleCreate } from './tuple';
-import { create as refCreate } from './Reference';
+import Reference, { create as refCreate } from './Reference';
 import { create as lazyCreate } from './Lazy';
+import Lazy from './Lazy';
 import ValidationError from './ValidationError';
 import reach, { getIn } from './util/reach';
 import isSchema from './util/isSchema';
@@ -106,6 +107,8 @@ export {
   setLocale,
   defaultLocale,
   ValidationError,
+  Lazy,
+  Reference,
 };
 
 export {
