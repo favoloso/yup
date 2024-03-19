@@ -75,6 +75,7 @@ export interface CastOptions<C = {}> {
   stripUnknown?: boolean;
   // XXX: should be private?
   path?: string;
+  index?: number;
   resolved?: boolean;
 }
 

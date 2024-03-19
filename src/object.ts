@@ -207,6 +207,8 @@ export default class ObjectSchema<
           context: options.context,
           parent: intermediateValue,
           from: innerOptions.from,
+          path: innerOptions.path,
+          index: innerOptions.index,
         });
 
         let fieldSpec = field instanceof Schema ? field.spec : undefined;

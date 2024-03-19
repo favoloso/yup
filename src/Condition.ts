@@ -19,6 +19,9 @@ export type ResolveOptions<TContext = any> = {
   parent?: any;
   context?: TContext;
   from?: Ancester<TContext>[];
+
+  path?: string;
+  index?: number;
 };
 
 class Condition<TIn extends ISchema<any, any> = ISchema<any, any>> {
