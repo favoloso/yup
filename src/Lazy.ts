@@ -54,6 +54,9 @@ class Lazy<T, TContext = AnyObject, TFlags extends Flags = any>
   clone(spec?: Partial<LazySpec>): Lazy<T, TContext, TFlags> {
     const next = new Lazy<T, TContext, TFlags>(this.builder);
     next.spec = { ...this.spec, ...spec };
+    // `meta()` assigns into `spec.meta`: copy it so that the original schema
+    // is not mutated (same shallow copy as `Schema.clone`).
+    if (next.spec.meta) next.spec.meta = { ...next.spec.meta };
     return next;
   }
 

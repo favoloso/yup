@@ -949,6 +949,29 @@ describe('Mixed Types ', () => {
     );
   });
 
+  it('should not share first-level meta between clones', () => {
+    const nested = { list: [1] };
+    const base = string().meta({ input: 'foo', nested });
+    const derived = base.meta({ foo: 'bar' });
+    const cloned = base.clone();
+
+    expect(base.meta()).toEqual({ input: 'foo', nested });
+    expect(derived.meta()).toEqual({ input: 'foo', foo: 'bar', nested });
+    expect(cloned.meta()).not.toBe(base.meta());
+    // nested meta values are shared (shallow copy): copy-on-write is up to
+    // the caller
+    expect(cloned.meta()!.nested).toBe(nested);
+  });
+
+  it('should not share spec between clones', () => {
+    const base = string().label('a');
+    const cloned = base.clone();
+    cloned.spec.label = 'b';
+
+    expect(base.spec.label).toBe('a');
+    expect(base.spec).not.toBe(cloned.spec);
+  });
+
   describe('schema.describe()', () => {
     let schema: ObjectSchema<any>;
     beforeEach(() => {

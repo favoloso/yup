@@ -234,7 +234,14 @@ export default abstract class Schema<
     next.conditions = [...this.conditions];
     next.tests = [...this.tests];
     next.transforms = [...this.transforms];
-    next.spec = cloneDeep({ ...this.spec, ...spec });
+    // @favoloso/yup: shallow copy of `spec` (and of `meta`) instead of a deep
+    // clone. Every builder method clones the schema, and `cloneDeep` was the
+    // top self-time function while building large schemas. Values nested in
+    // `meta` (arrays, objects) are now shared between a schema and its clones:
+    // treat them as immutable (copy-on-write), as `meta()` already does for
+    // its first-level keys.
+    next.spec = { ...this.spec, ...spec };
+    if (next.spec.meta) next.spec.meta = { ...next.spec.meta };
 
     return next as this;
   }

@@ -53,6 +53,7 @@ describe('lazy', function () {
         a: 1,
         added: true,
       });
+      expect(schema.meta()).toEqual({ a: 1 });
     });
   });
 });
