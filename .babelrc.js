@@ -6,6 +6,7 @@ module.exports = (api) => ({
         ? {
             ignoreBrowserslistConfig: true,
             modules: api.env() === 'esm' ? false : 'commonjs',
+            exclude: ['proposal-object-rest-spread'],
           }
         : {
             target: 'node',
