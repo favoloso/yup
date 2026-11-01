@@ -1,3 +1,48 @@
+# 1.4.0-fv.5 (non pubblicata)
+
+Correzioni di performance riportate da upstream (il fork parte da yup 1.2.0,
+merge-base `e593f8f`) e ottimizzazioni proprie del fork.
+
+### Performance
+
+* `ValidationError`: `inner` e gli errori annidati si accumulano con `push`
+  invece di `concat`, che era quadratico (backport di
+  [#2044](https://github.com/jquense/yup/pull/2044) /
+  [#2072](https://github.com/jquense/yup/pull/2072)).
+* Opzione `disableStackTrace` in `SchemaSpec`, `ValidateOptions` e
+  `CreateErrorOptions` (backport di [#2072](https://github.com/jquense/yup/pull/2072)
+  e [#2142](https://github.com/jquense/yup/pull/2142)). A differenza di
+  upstream non esiste una classe `ValidationErrorNoStack`: l'errore resta
+  un'istanza di `Error` e di `ValidationError` (`instanceof`,
+  `Object.prototype.toString` e `util.types.isNativeError` invariati) e la
+  cattura dello stack si evita azzerando `Error.stackTraceLimit` attorno a
+  `super()`. `disableStackTrace` non viene aggiunto a `error.params`.
+* I test sincroni non vengono più avvolti in una Promise durante
+  `validate()` asincrona (backport di [#2053](https://github.com/jquense/yup/pull/2053)).
+* `ObjectSchema._cast` cerca le chiavi sconosciute in un `Set` invece di
+  `_nodes.includes` (O(K²) sul numero di chiavi).
+* `Schema.clone()` copia `spec` e `meta` in superficie invece di usare
+  `cloneDeep`.
+* La build non trasforma più l'object spread in `Object.assign`.
+
+### BREAKING CHANGES
+
+* **`disableStackTrace` è `true` di default** (upstream `false`): gli errori
+  prodotti da `validate`/`validateSync` e da `createError` non hanno frame
+  nello stack (`error.stack` contiene solo l'intestazione). Per riaverli si
+  passa `{ disableStackTrace: false }` a `validate`/`validateSync`. Un
+  `new ValidationError(...)` costruito direttamente mantiene lo stack.
+* I valori annidati in `meta` (array e oggetti) sono condivisi fra uno
+  schema e i suoi cloni: vanno trattati come immutabili e sostituiti invece
+  di essere mutati (es. `meta.deps = [...meta.deps, dep]` invece di
+  `meta.deps.push(dep)`). Le chiavi di primo livello restano separate.
+* La build usa l'object spread nativo (ES2018).
+
+### Bug Fixes
+
+* `Lazy.clone()` copia `meta`: prima `lazy().meta(x)` modificava il meta
+  dello schema di partenza.
+
 # [1.3.0](https://github.com/jquense/yup/compare/v1.2.0...v1.3.0) (2023-06-21)
 
 
