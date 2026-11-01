@@ -1,4 +1,12 @@
-import { string, number, object, array, StringSchema, AnySchema } from '../src';
+import {
+  string,
+  number,
+  object,
+  array,
+  StringSchema,
+  AnySchema,
+  ValidationError,
+} from '../src';
 
 describe('Array types', () => {
   describe('casting', () => {
@@ -145,6 +153,33 @@ describe('Array types', () => {
         errors: ['[0].str is a required field', 'oops'],
       }),
     );
+  });
+
+  it('should respect disableStackTrace', async () => {
+    let inst = array().of(object({ str: string().required() })).strict();
+
+    const data = [{ str: undefined }, { str: undefined }];
+    const hasFrames = (err: any) => /\n\s+at /.test(err.stack);
+    const errorOf = (options?: any) =>
+      inst.validate(data, { abortEarly: false, ...options }).then(
+        () => {
+          throw new Error('expected a validation error');
+        },
+        (err) => err,
+      );
+
+    // @favoloso/yup: stack traces are disabled by default
+    const noStack = await errorOf();
+    expect(noStack).toBeInstanceOf(ValidationError);
+    expect(noStack).toBeInstanceOf(Error);
+    expect(noStack.inner).toHaveLength(2);
+    expect(hasFrames(noStack)).toBe(false);
+    noStack.inner.forEach((e: any) => expect(hasFrames(e)).toBe(false));
+
+    const withStack = await errorOf({ disableStackTrace: false });
+    expect(withStack.inner).toHaveLength(2);
+    expect(hasFrames(withStack)).toBe(true);
+    withStack.inner.forEach((e: any) => expect(hasFrames(e)).toBe(true));
   });
 
   it('should compact arrays', () => {

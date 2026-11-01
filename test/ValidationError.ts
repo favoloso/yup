@@ -49,4 +49,36 @@ describe('ValidationError', () => {
       expect(str).toContain('0');
     });
   });
+
+  it('should disable stacks', () => {
+    const disabled = new ValidationError('error', 1, 'field', 'type', true);
+
+    expect(disabled).toBeInstanceOf(ValidationError);
+    expect(disabled).toBeInstanceOf(Error);
+    expect(Object.prototype.toString.call(disabled)).toBe('[object Error]');
+    expect(disabled.stack).not.toMatch(/\n\s+at /);
+    expect(disabled.message).toBe('error');
+  });
+
+  it('should keep stacks by default when constructed directly', () => {
+    const error = new ValidationError('error', 1, 'field', 'type');
+
+    expect(error.stack).toMatch(/\n\s+at /);
+  });
+
+  it('should restore Error.stackTraceLimit', () => {
+    const limit = Error.stackTraceLimit;
+    new ValidationError('error', 1, 'field', 'type', true);
+
+    expect(Error.stackTraceLimit).toBe(limit);
+  });
+
+  it('should flatten nested errors in order', () => {
+    const leaf = (n: number) => new ValidationError(`e${n}`, n, `p${n}`);
+    const group = new ValidationError([leaf(1), leaf(2)]);
+    const error = new ValidationError([group, leaf(3)]);
+
+    expect(error.inner.map((e) => e.path)).toEqual(['p1', 'p2', 'p3']);
+    expect(error.errors).toEqual(['e1', 'e2', 'e3']);
+  });
 });
