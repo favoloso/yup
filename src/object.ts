@@ -79,6 +79,17 @@ function unknown(ctx: ObjectSchema<any, any, any>, value: any) {
 
 const defaultSort = sortByKeyOrder([]);
 
+const nodeSets = new WeakMap<readonly string[], Set<string>>();
+
+function getNodeSet(nodes: readonly string[]) {
+  let set = nodeSets.get(nodes);
+  if (!set) {
+    set = new Set(nodes);
+    nodeSets.set(nodes, set);
+  }
+  return set;
+}
+
 export function create<
   C extends Maybe<AnyObject> = AnyObject,
   S extends ObjectShape = {},
@@ -132,7 +143,7 @@ export default class ObjectSchema<
 
   declare spec: ObjectSchemaSpec;
 
-  private _sortErrors = defaultSort;
+  private _sortFieldErrors = defaultSort;
   private _nodes: string[] = [];
 
   private _excludedEdges: readonly [nodeA: string, nodeB: string][] = [];
@@ -163,9 +174,13 @@ export default class ObjectSchema<
     let fields = this.fields;
 
     let strip = options.stripUnknown ?? this.spec.noUnknown;
+    // `_nodes.includes` inside the filter is O(K^2) on objects with many
+    // keys: look the nodes up in a Set (cached per `_nodes` array, which is
+    // replaced and never mutated by `setFields`).
+    let nodeSet = getNodeSet(this._nodes);
     let props = ([] as string[]).concat(
       this._nodes,
-      Object.keys(value).filter((v) => !this._nodes.includes(v)),
+      Object.keys(value).filter((v) => !nodeSet.has(v)),
     );
 
     // Fix missing `from` in nested schemas: in that case, the first `from` is
@@ -290,7 +305,7 @@ export default class ObjectSchema<
         { tests, value, originalValue, options },
         panic,
         (fieldErrors) => {
-          next(fieldErrors.sort(this._sortErrors).concat(objectErrors), value);
+          next(this._sortFieldErrors(fieldErrors).concat(objectErrors), value);
         },
       );
     });
@@ -301,7 +316,7 @@ export default class ObjectSchema<
     next.fields = { ...this.fields };
     next._nodes = this._nodes;
     next._excludedEdges = this._excludedEdges;
-    next._sortErrors = this._sortErrors;
+    next._sortFieldErrors = this._sortFieldErrors;
 
     return next;
   }
@@ -380,7 +395,7 @@ export default class ObjectSchema<
     next.fields = shape;
 
     next._nodes = sortFields(shape, excludedEdges);
-    next._sortErrors = sortByKeyOrder(Object.keys(shape));
+    next._sortFieldErrors = sortByKeyOrder(Object.keys(shape));
     // XXX: this carries over edges which may not be what you want
     if (excludedEdges) next._excludedEdges = excludedEdges;
     return next;
