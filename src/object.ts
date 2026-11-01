@@ -79,6 +79,17 @@ function unknown(ctx: ObjectSchema<any, any, any>, value: any) {
 
 const defaultSort = sortByKeyOrder([]);
 
+const nodeSets = new WeakMap<readonly string[], Set<string>>();
+
+function getNodeSet(nodes: readonly string[]) {
+  let set = nodeSets.get(nodes);
+  if (!set) {
+    set = new Set(nodes);
+    nodeSets.set(nodes, set);
+  }
+  return set;
+}
+
 export function create<
   C extends Maybe<AnyObject> = AnyObject,
   S extends ObjectShape = {},
@@ -163,9 +174,13 @@ export default class ObjectSchema<
     let fields = this.fields;
 
     let strip = options.stripUnknown ?? this.spec.noUnknown;
+    // `_nodes.includes` inside the filter is O(K^2) on objects with many
+    // keys: look the nodes up in a Set (cached per `_nodes` array, which is
+    // replaced and never mutated by `setFields`).
+    let nodeSet = getNodeSet(this._nodes);
     let props = ([] as string[]).concat(
       this._nodes,
-      Object.keys(value).filter((v) => !this._nodes.includes(v)),
+      Object.keys(value).filter((v) => !nodeSet.has(v)),
     );
 
     // Fix missing `from` in nested schemas: in that case, the first `from` is
