@@ -144,28 +144,24 @@ export default function createValidation(config: {
 
     const shouldSkip = skipAbsent && isAbsent(value);
 
-    if (!options.sync) {
-      try {
-        Promise.resolve(!shouldSkip ? test.call(ctx, value, ctx) : true).then(
-          handleResult,
-          handleError,
-        );
-      } catch (err: any) {
-        handleError(err);
-      }
-
-      return;
+    // Backport of jquense/yup#2053: synchronous tests are not wrapped in a
+    // Promise anymore during an async `validate()`; only tests that actually
+    // return a thenable go through `Promise.resolve`.
+    if (shouldSkip) {
+      return handleResult(true);
     }
 
     let result: ReturnType<TestFunction>;
     try {
-      result = !shouldSkip ? test.call(ctx, value, ctx) : true;
-
+      result = test.call(ctx, value, ctx);
       if (typeof (result as any)?.then === 'function') {
-        throw new Error(
-          `Validation test of type: "${ctx.type}" returned a Promise during a synchronous validate. ` +
-            `This test will finish after the validate call has returned`,
-        );
+        if (options.sync) {
+          throw new Error(
+            `Validation test of type: "${ctx.type}" returned a Promise during a synchronous validate. ` +
+              `This test will finish after the validate call has returned`,
+          );
+        }
+        return Promise.resolve(result).then(handleResult, handleError);
       }
     } catch (err: any) {
       handleError(err);
