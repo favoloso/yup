@@ -23,6 +23,15 @@ merge-base `e593f8f`) e ottimizzazioni proprie del fork.
   `_nodes.includes` (O(K²) sul numero di chiavi).
 * `Schema.clone()` copia `spec` e `meta` in superficie invece di usare
   `cloneDeep`.
+* Gli errori dei campi di un oggetto (`abortEarly: false`) si ordinano
+  calcolando una sola volta per errore l'indice della chiave, O(N × K) con
+  N errori e K chiavi, e poi confrontando numeri, invece di cercare la
+  chiave a ogni confronto (O(N log N × K)). L'ordine è identico (prima
+  chiave, in ordine di shape, contenuta nel path; errori senza path in
+  fondo) e non resta cache sullo schema fra una validazione e l'altra. Il
+  campo privato `_sortErrors` (un comparatore) diventa `_sortFieldErrors`
+  (una funzione che ordina l'array): le patch esterne che sostituivano
+  `_sortErrors` non hanno più effetto.
 * La build non trasforma più l'object spread in `Object.assign`.
 
 ### BREAKING CHANGES

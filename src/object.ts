@@ -143,7 +143,7 @@ export default class ObjectSchema<
 
   declare spec: ObjectSchemaSpec;
 
-  private _sortErrors = defaultSort;
+  private _sortFieldErrors = defaultSort;
   private _nodes: string[] = [];
 
   private _excludedEdges: readonly [nodeA: string, nodeB: string][] = [];
@@ -305,7 +305,7 @@ export default class ObjectSchema<
         { tests, value, originalValue, options },
         panic,
         (fieldErrors) => {
-          next(fieldErrors.sort(this._sortErrors).concat(objectErrors), value);
+          next(this._sortFieldErrors(fieldErrors).concat(objectErrors), value);
         },
       );
     });
@@ -316,7 +316,7 @@ export default class ObjectSchema<
     next.fields = { ...this.fields };
     next._nodes = this._nodes;
     next._excludedEdges = this._excludedEdges;
-    next._sortErrors = this._sortErrors;
+    next._sortFieldErrors = this._sortFieldErrors;
 
     return next;
   }
@@ -395,7 +395,7 @@ export default class ObjectSchema<
     next.fields = shape;
 
     next._nodes = sortFields(shape, excludedEdges);
-    next._sortErrors = sortByKeyOrder(Object.keys(shape));
+    next._sortFieldErrors = sortByKeyOrder(Object.keys(shape));
     // XXX: this carries over edges which may not be what you want
     if (excludedEdges) next._excludedEdges = excludedEdges;
     return next;

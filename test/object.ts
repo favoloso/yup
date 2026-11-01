@@ -13,6 +13,8 @@ import {
   MixedSchema,
 } from '../src';
 import ObjectSchema from '../src/object';
+import ValidationError from '../src/ValidationError';
+import sortByKeyOrder from '../src/util/sortByKeyOrder';
 import { AnyObject } from '../src/types';
 import { validationErrorWithMessages } from './helpers';
 
@@ -725,6 +727,158 @@ describe('Object types', () => {
         'bar is a required field',
       ),
     );
+  });
+
+  describe('error sorting', () => {
+    // the comparator used before the per-call indexes, kept as reference
+    function legacyComparator(keys: readonly string[]) {
+      const findIndex = (err: ValidationError) => {
+        let idx = Infinity;
+        keys.some((key, ii) => {
+          if (err.path?.includes(key)) {
+            idx = ii;
+            return true;
+          }
+          return false;
+        });
+        return idx;
+      };
+      return (a: ValidationError, b: ValidationError) =>
+        findIndex(a) - findIndex(b);
+    }
+
+    let createInst = () =>
+      object({
+        name: string().required(),
+        // validated after `age` because of the dependency
+        nickname: string().when('age', ([age], s) => (age ? s.min(10) : s)),
+        age: number().required().min(18),
+        address: object({
+          street: string().required(),
+          city: string().required(),
+        }),
+        tags: array(string().required().min(3)).min(5),
+        items: array(
+          object({
+            code: string().required(),
+            qty: number().required().min(1),
+          }),
+        ),
+      }).test('whole', 'object error', () => false);
+
+    let invalidValue = {
+      nickname: 'short',
+      age: 3,
+      address: { street: '', city: '' },
+      tags: ['a', 'bb', 'ccc', ''],
+      items: [{ code: 'x', qty: 0 }, {}, { qty: 2 }],
+    };
+
+    it('should sort nested and array errors by key order', async () => {
+      let error: ValidationError = await createInst()
+        .validate(invalidValue, { abortEarly: false })
+        .catch((err) => err);
+
+      expect(error.inner.map((e) => e.path)).toEqual([
+        // `nickname` includes `name`, so both get index 0 and keep the order
+        // in which they were validated
+        'nickname',
+        'name',
+        'age',
+        'address.street',
+        'address.city',
+        'tags[0]',
+        'tags[1]',
+        'tags["3"]',
+        'tags["3"]',
+        'tags',
+        'items[0].qty',
+        'items[1].code',
+        'items[1].qty',
+        'items[2].code',
+        // the object-level test error is appended after the sorted ones
+        '',
+      ]);
+      expect(error.inner[error.inner.length - 1].message).toEqual(
+        'object error',
+      );
+    });
+
+    it('should match the previous comparator on arbitrary paths', () => {
+      let keys = ['a', 'ab', 'list', 'b', 'nested', 'x1'];
+      let sort = sortByKeyOrder(keys);
+      let paths = [
+        undefined,
+        '',
+        'list[3].b',
+        'zz',
+        'ab',
+        'nested.a',
+        'b',
+        'x1[10]',
+        'list[0]',
+        undefined,
+        'a',
+        'q.b',
+        'nothing',
+        'list',
+      ];
+      // deterministic permutations of the paths
+      for (let seed = 1; seed < 50; seed++) {
+        let errors = paths
+          .map((path, i) => ({ path, i, k: (i * 7919 * seed) % 101 }))
+          .sort((a, b) => a.k - b.k)
+          .map(({ path, i }) => new ValidationError(`e${i}`, null, path));
+
+        let expected = errors.slice().sort(legacyComparator(keys));
+        let actual = errors.slice();
+
+        expect(sort(actual)).toBe(actual);
+        expect(actual).toEqual(expected);
+        expect(actual.map((e) => e.message)).toEqual(
+          expected.map((e) => e.message),
+        );
+      }
+    });
+
+    it('should put errors without path last', () => {
+      let sort = sortByKeyOrder(['a', 'b']);
+      let errors = [
+        new ValidationError('no path'),
+        new ValidationError('b', null, 'b'),
+        new ValidationError('other', null, 'c'),
+        new ValidationError('a', null, 'a'),
+      ];
+
+      expect(sort(errors).map((e) => e.message)).toEqual([
+        'a',
+        'b',
+        'no path',
+        'other',
+      ]);
+    });
+
+    it('should not keep state between validations', async () => {
+      let inst = createInst();
+      let ownProps = Object.getOwnPropertyNames(inst).sort();
+      let sorter = (inst as any)._sortFieldErrors;
+      let sorterProps = Object.getOwnPropertyNames(sorter).sort();
+
+      for (let size = 1; size < 30; size += 7) {
+        let items = Array.from({ length: size }, () => ({}));
+        let error: ValidationError = await inst
+          .validate({ ...invalidValue, items }, { abortEarly: false })
+          .catch((err) => err);
+
+        expect(
+          error.inner.filter((e) => e.path?.startsWith('items')),
+        ).toHaveLength(size * 2);
+      }
+
+      expect(Object.getOwnPropertyNames(inst).sort()).toEqual(ownProps);
+      expect((inst as any)._sortFieldErrors).toBe(sorter);
+      expect(Object.getOwnPropertyNames(sorter).sort()).toEqual(sorterProps);
+    });
   });
 
   it('should respect recursive', () => {
